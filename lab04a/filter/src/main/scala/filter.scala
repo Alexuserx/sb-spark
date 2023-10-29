@@ -5,7 +5,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 object filter extends java.io.Serializable {
   private def writeDataToHDFS(df: DataFrame, outputDirPrefix: String, path: String): Unit = {
     val pathToData = outputDirPrefix.stripSuffix("/") + "/" + path.stripPrefix("/")
-    println(s"pathToData: $pathToData")
+    println(s"<<<<< pathToData: $pathToData >>>>>")
     val finalDF = df
       .toJSON
       .select(
@@ -55,7 +55,7 @@ object filter extends java.io.Serializable {
         else "{\"" + topic + "\":{\"0\":" + offset + "}}"
       )
       .load()
-    println(s"Loaded data from kafka topic=$topic with offset=$offset")
+    println(s"<<<<< Loaded data from kafka topic=$topic with offset=$offset >>>>>")
 
     val filledWithDateDF: DataFrame = df
       .withColumn("value", from_json(col("value").cast(StringType), valueSchema))
@@ -70,10 +70,12 @@ object filter extends java.io.Serializable {
     val buyTypeDF: DataFrame = filledWithDateDF.filter(col("value.event_type") === lit("buy"))
     val viewTypeDF: DataFrame = filledWithDateDF.filter(col("value.event_type") === lit("view"))
 
-    println(s"Started saving data to HDFS, outputDirPrefix=$outputDirPrefix")
+    println(s"<<<<< Started saving data to HDFS, outputDirPrefix=$outputDirPrefix >>>>>")
     writeDataToHDFS(buyTypeDF, outputDirPrefix, buyPath)
-    println(s"Saved buyTypeDF data to HDFS buyPath=$buyPath")
+    println(s"<<<<< Saved buyTypeDF data to HDFS buyPath=$buyPath >>>>>")
     writeDataToHDFS(viewTypeDF, outputDirPrefix, viewPath)
-    println(s"Saved viewTypeDF data to HDFS viewPath=$viewPath")
+    println(s"<<<<< Saved viewTypeDF data to HDFS viewPath=$viewPath >>>>>")
+
+    println("<<<<< DONE >>>>>")
   }
 }
