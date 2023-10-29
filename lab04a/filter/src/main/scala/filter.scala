@@ -7,10 +7,20 @@ object filter extends java.io.Serializable {
     val pathToData = outputDirPrefix.stripSuffix("/") + "/" + path.stripPrefix("/")
     println(s"<<<<< pathToData: $pathToData >>>>>")
     val finalDF = df
-      .toJSON
+//      .toJSON
+//      .select(
+//        get_json_object(col("value"), "$.value").as("value"),
+//        get_json_object(col("value"), "$.p_date").as("p_date")
+//      )
       .select(
-        get_json_object(col("value"), "$.value").as("value"),
-        get_json_object(col("value"), "$.p_date").as("p_date")
+        col("value.event_type"),
+        col("value.category"),
+        col("value.item_id"),
+        col("value.item_price"),
+        col("value.uid"),
+        col("value.timestamp"),
+        col("value.date"),
+        col("p_date")
       )
 
     finalDF
