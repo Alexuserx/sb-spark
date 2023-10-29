@@ -7,11 +7,6 @@ object filter extends java.io.Serializable {
     val pathToData = outputDirPrefix.stripSuffix("/") + "/" + path.stripPrefix("/")
     println(s"<<<<< pathToData: $pathToData >>>>>")
     val finalDF = df
-//      .toJSON
-//      .select(
-//        get_json_object(col("value"), "$.value").as("value"),
-//        get_json_object(col("value"), "$.p_date").as("p_date")
-//      )
       .select(
         col("value.event_type"),
         col("value.category"),
@@ -39,7 +34,6 @@ object filter extends java.io.Serializable {
     val topic: String = spark.sparkContext.getConf.get("spark.filter.topic_name")
     val offset: String = spark.sparkContext.getConf.get("spark.filter.offset")
     val prefix: String = spark.sparkContext.getConf.get("spark.filter.output_dir_prefix")
-
     val outputDirPrefix: String = if (prefix.contains("/")) prefix else s"/user/aleksandr.yurchenko/$prefix"
 
     val buyPath: String = "buy"
