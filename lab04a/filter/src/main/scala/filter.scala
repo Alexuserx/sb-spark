@@ -1,14 +1,9 @@
-import org.apache.spark.sql.{DataFrame, SparkSession, Column}
-import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
-
-import java.net.{URL, URLDecoder}
-import scala.util.Try
-import sys.process._
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object filter extends java.io.Serializable {
-  protected def writeDataToHDFS(df: DataFrame, outputDirPrefix: String, path: String): Unit = {
+  private def writeDataToHDFS(df: DataFrame, outputDirPrefix: String, path: String): Unit = {
     val pathToData = outputDirPrefix.stripSuffix("/") + "/" + path.stripPrefix("/")
     println(s"pathToData: $pathToData")
     val finalDF = df
@@ -31,13 +26,9 @@ object filter extends java.io.Serializable {
       .getOrCreate()
 
     spark.conf.set("spark.sql.session.timeZone", "UTC")
-    //         val topic: String = spark.sparkContext.getConf.get("spark.filter.topic_name")
-    //         val offset: String = spark.sparkContext.getConf.get("spark.filter.offset")
-    //         val outputDirPrefix: String = spark.sparkContext.getConf.get("spark.filter.output_dir_prefix")
-
-    val topic: String = "lab04_input_data"
-    val offset: String = "earliest"
-    val outputDirPrefix: String = "/user/aleksandr.yurchenko/visits"
+    val topic: String = spark.sparkContext.getConf.get("spark.filter.topic_name")
+    val offset: String = spark.sparkContext.getConf.get("spark.filter.offset")
+    val outputDirPrefix: String = spark.sparkContext.getConf.get("spark.filter.output_dir_prefix")
 
     val buyPath: String = "buy"
     val viewPath: String = "view"
