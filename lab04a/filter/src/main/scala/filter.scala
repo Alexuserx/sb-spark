@@ -28,7 +28,9 @@ object filter extends java.io.Serializable {
     spark.conf.set("spark.sql.session.timeZone", "UTC")
     val topic: String = spark.sparkContext.getConf.get("spark.filter.topic_name")
     val offset: String = spark.sparkContext.getConf.get("spark.filter.offset")
-    val outputDirPrefix: String = spark.sparkContext.getConf.get("spark.filter.output_dir_prefix")
+    val prefix: String = spark.sparkContext.getConf.get("spark.filter.output_dir_prefix")
+
+    val outputDirPrefix: String = if (prefix.contains("/")) prefix else s"/user/aleksandr.yurchenko/$prefix"
 
     val buyPath: String = "buy"
     val viewPath: String = "view"
