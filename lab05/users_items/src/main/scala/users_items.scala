@@ -14,10 +14,10 @@ object users_items extends java.io.Serializable {
     spark.conf.set("spark.sql.session.timeZone", "UTC")
     val user_name = "aleksandr.yurchenko"
     var input_dir: String = Try {spark.sparkContext.getConf.get("spark.users_items.input_dir")}
-      .getOrElse(s"/user/$user_name/visits" )
+      .getOrElse(s"file:///user/$user_name/visits" )
     input_dir = if (input_dir.contains("/")) input_dir else s"/user/$user_name/$input_dir"
     var output_dir: String = Try {spark.sparkContext.getConf.get("spark.users_items.output_dir")}
-      .getOrElse(s"/user/$user_name/user-items" )
+      .getOrElse(s"file:///user/$user_name/user-items" )
     output_dir = if (output_dir.contains("/")) output_dir else s"/user/$user_name/$output_dir"
     val update: Int = Try {spark.sparkContext.getConf.get("spark.users_items.update").toInt}
       .getOrElse(0)
