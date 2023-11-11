@@ -29,8 +29,8 @@ object features extends java.io.Serializable {
       .withColumn("web_hour", concat(lit("web_hour_"), col("hour").cast("string")))
     println("<<< prepared logs >>>")
 
-    val pivoted_week_df = logs_df.groupBy("uid").pivot("web_week").count().na.fill(0)
-    val pivoted_hour_df = logs_df.groupBy("uid").pivot("web_hour").count().na.fill(0)
+    val pivoted_week_df = logs_df.groupBy("uid").pivot("web_week").count()
+    val pivoted_hour_df = logs_df.groupBy("uid").pivot("web_hour").count()
     println("<<< pivoted days and hours >>>")
 
     val fractions_df = logs_df.groupBy("uid")
