@@ -7,6 +7,7 @@ object features extends java.io.Serializable {
     val spark: SparkSession = SparkSession.builder()
       .appName("laba06")
       .getOrCreate()
+    spark.conf.set("spark.sql.session.timeZone", "UTC")
 
     val logs: DataFrame = spark.read.json("hdfs:///labs/laba03/weblogs.json")
     println("<<< read logs >>>")
@@ -41,8 +42,8 @@ object features extends java.io.Serializable {
     println("<<< calculated fractions >>>")
 
     val top_domains_1000 = logs_df.groupBy("domain").count()
-      .withColumn("rnk", rank().over(Window.orderBy(col("count").desc)))
-      .filter("rnk <= 1000").orderBy("domain").limit(1000).select("domain").cache()
+      .withColumn("rnk", rank().over(Window.orderBy(col("count").desc, col("domain").asc)))
+      .filter("rnk <= 1000").select("domain").cache()
     val top_domains_1000_list = top_domains_1000.orderBy("domain").rdd.map(_.getString(0)).collect()
     println("<<< get top domians >>>")
 
