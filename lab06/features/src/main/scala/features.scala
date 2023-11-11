@@ -53,8 +53,7 @@ object features extends java.io.Serializable {
         array(top_domains_1000_list.map(c => col(s"`$c`")): _*).cast("array<int>").alias("domain_features"))
     println("<<< pivoted domains >>> ")
 
-    val final_df = logs_df
-      .drop("count", "domain", "timestamp", "week", "web_week", "hour", "web_hour")
+    val final_df = logs_df.select("uid").distinct()
       .join(pivoted_week_df, Seq("uid"), "left")
       .join(pivoted_hour_df, Seq("uid"), "left")
       .join(fractions_df, Seq("uid"), "left")
