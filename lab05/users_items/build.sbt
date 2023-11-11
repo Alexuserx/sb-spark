@@ -9,4 +9,4 @@ lazy val root = (project in file("."))
 
 val sparkVersion = "2.4.7"
 
-libraryDependencies += "org.apache.spark" %% "spark-sql" % sparkVersion // % "provided"
+libraryDependencies += "org.apache.spark" %% "spark-sql" % sparkVersion % "provided"

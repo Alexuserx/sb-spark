@@ -2,6 +2,8 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.functions._
 
+import scala.util.Try
+
 object users_items extends java.io.Serializable {
 
   def main(args: Array[String]): Unit = {
@@ -11,11 +13,14 @@ object users_items extends java.io.Serializable {
 
     spark.conf.set("spark.sql.session.timeZone", "UTC")
     val user_name = "aleksandr.yurchenko"
-    var input_dir: String = spark.sparkContext.getConf.get("spark.users_items.input_dir")
+    var input_dir: String = Try {spark.sparkContext.getConf.get("spark.users_items.input_dir")}
+      .getOrElse("/user/$user_name/visits" )
     input_dir = if (input_dir.contains("/")) input_dir else s"/user/$user_name/$input_dir"
-    var output_dir: String = spark.sparkContext.getConf.get("spark.users_items.output_dir")
+    var output_dir: String = Try {spark.sparkContext.getConf.get("spark.users_items.output_dir")}
+      .getOrElse("/user/$user_name/user-items" )
     output_dir = if (output_dir.contains("/")) output_dir else s"/user/$user_name/$output_dir"
-    val update: Int = spark.sparkContext.getConf.get("spark.users_items.update").toInt
+    val update: Int = Try {spark.sparkContext.getConf.get("spark.users_items.update").toInt}
+      .getOrElse(0)
 
     println(s"<<< CONFIG >>> : input_dir=$input_dir, output_dir=$output_dir, update=$update")
 
