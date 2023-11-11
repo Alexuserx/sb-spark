@@ -12,7 +12,7 @@ object features extends java.io.Serializable {
     val logs: DataFrame = spark.read.json("hdfs:///labs/laba03/weblogs.json")
     println("<<< read logs >>>")
     val users_items_df = spark.read.parquet("/user/aleksandr.yurchenko/users-items/20200429")
-    println("<<< users x items >>>")
+    println("<<< read users x items >>>")
 
     val logs_df: DataFrame = logs
       .withColumn("visit", explode(col("visits")))
@@ -45,7 +45,7 @@ object features extends java.io.Serializable {
       .withColumn("rnk", rank().over(Window.orderBy(col("count").desc, col("domain").asc)))
       .filter("rnk <= 1000").select("domain").cache()
     val top_domains_1000_list = top_domains_1000.orderBy("domain").rdd.map(_.getString(0)).collect()
-    println("<<< get top domians >>>")
+    println("<<< got top 1000 domians >>>")
 
     val pivoted_domains_df = logs_df.join(top_domains_1000, Seq("domain"), "inner")
       .groupBy("uid").pivot("domain").count().na.fill(0)
@@ -66,5 +66,7 @@ object features extends java.io.Serializable {
       .format("parquet")
       .mode("overwrite")
       .save("/user/aleksandr.yurchenko/features")
+
+    println("<<< DONE >>>")
   }
 }
