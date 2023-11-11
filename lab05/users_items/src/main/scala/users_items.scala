@@ -41,8 +41,8 @@ object users_items extends java.io.Serializable {
     val result_df = update match {
       case 0 => pivoted_df
       case 1 =>
-        val fs = FileSystem.get(spark.sparkContext.hadoopConfiguration)
-        val last_date = fs.listStatus(new Path(s"$output_dir/")).filter(_.isDirectory)
+        val hdfs = FileSystem.get(new java.net.URI(output_dir), spark.sparkContext.hadoopConfiguration)        
+        val last_date = hdfs.listStatus(new Path(output_dir)).filter(_.isDirectory)
           .map(_.getPath.toString.split("/").last.toLong).max
 
         val old_df = spark.read.parquet(s"$output_dir/$last_date/*")
