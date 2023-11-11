@@ -44,6 +44,7 @@ object users_items extends java.io.Serializable {
         val hdfs = FileSystem.get(new java.net.URI(output_dir), spark.sparkContext.hadoopConfiguration)        
         val last_date = hdfs.listStatus(new Path(output_dir)).filter(_.isDirectory)
           .map(_.getPath.toString.split("/").last.toLong).max
+        println(s"<<< LAST SAVED DATA PATH >>> : $output_dir/$last_date/")
 
         val old_df = spark.read.parquet(s"$output_dir/$last_date/*")
 
