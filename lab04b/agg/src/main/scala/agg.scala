@@ -60,15 +60,6 @@ object agg {
       .drop("window").toJSON
       .withColumn("key", lit(null).cast(StringType))
 
-    sdfAgg
-      .writeStream
-      .format("console")
-      .outputMode("update")
-      .trigger(Trigger.ProcessingTime("30 seconds"))
-      .option("truncate", "false")
-      .option("numRows", "20")
-      .start
-
     val writeQuery = sdfAgg
       .writeStream
       .format("kafka")
