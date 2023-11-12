@@ -12,8 +12,8 @@ object agg {
 
   private val kafkaOutputParams: Map[String, String] = Map(
     "kafka.bootstrap.servers" -> "spark-master-1:6667",
-    "subscribe" -> "aleksandr_yurchenko_lab04b_out",
-    "checkpointLocation" -> "/tmp/chk_yurchenko"
+    "checkpointLocation" -> "/tmp/chk_yurchenko",
+    "topic" -> "aleksandr_yurchenko_lab04b_out"
   )
 
   private val valueSchema: StructType = StructType(
