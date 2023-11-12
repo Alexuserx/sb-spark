@@ -47,7 +47,7 @@ object agg {
       .withColumn("timestamp", (col("timestamp") / 1000).cast(TimestampType))
 
     val sdfAgg = sdfValues
-      .groupBy(window(col("timestamp"), "1 hours"))
+      .groupBy(window(col("timestamp"), "1 hour"))
       .agg(
         sum(when(col("event_type") === lit("buy"), col("item_price")).otherwise(lit(0))).alias("revenue"),
         sum(when(col("uid").isNotNull, 1).otherwise(lit(0))).alias("visitors"),
