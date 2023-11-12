@@ -1,0 +1,3 @@
+object test_s {
+
+}

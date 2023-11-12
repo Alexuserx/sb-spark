@@ -1,0 +1,3 @@
+object train_s {
+
+}
