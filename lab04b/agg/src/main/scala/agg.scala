@@ -72,7 +72,7 @@ object agg {
       .writeStream
       .format("kafka")
       .outputMode("update")
-      .trigger(Trigger.ProcessingTime("30 seconds"))
+      .trigger(Trigger.ProcessingTime("15 seconds"))
       .options(kafkaOutputParams)
       .start
 
