@@ -63,7 +63,7 @@ object agg {
       .writeStream
       .format("console")
       .outputMode("update")
-      .trigger(Trigger.ProcessingTime("30 seconds"))
+      .trigger(Trigger.ProcessingTime("15 seconds"))
       .option("truncate", "false")
       .option("numRows", "20")
       .start
