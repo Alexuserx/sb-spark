@@ -47,7 +47,7 @@ object features extends java.io.Serializable {
     val top_domains_1000_list = top_domains_1000.orderBy("domain").rdd.map(_.getString(0)).collect()
     println("<<< got top 1000 domians >>>")
 
-    val pivoted_domains_df = logs_df.join(top_domains_1000, Seq("domain"), "inner")
+    val pivoted_domains_df = logs_df.join(top_domains_1000, Seq("domain"), "inner") // join не обязательно
       .groupBy("uid").pivot("domain").count().na.fill(0)
       .select(col("uid"),
         array(top_domains_1000_list.map(c => col(s"`$c`")): _*).cast("array<int>").alias("domain_features"))
