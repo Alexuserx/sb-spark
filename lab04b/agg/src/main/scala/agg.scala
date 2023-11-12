@@ -44,9 +44,10 @@ object agg {
       .select(col("value").cast(StringType))
       .withColumn("jsonData", from_json(col("value"), valueSchema))
       .select(col("jsonData.*"))
-      .withColumn("timestamp", (col("timestamp") / 1000).cast(TimestampType))
+      .withColumn("timestamp", from_unixtime(col("timestamp") / 1000).cast(TimestampType))
 
     val sdfAgg = sdfValues
+      .withWatermark("timestamp", "1 hour")
       .groupBy(window(col("timestamp"), "1 hour"))
       .agg(
         sum(when(col("event_type") === lit("buy"), col("item_price")).otherwise(lit(0))).alias("revenue"),
@@ -63,7 +64,7 @@ object agg {
       .writeStream
       .format("console")
       .outputMode("update")
-      .trigger(Trigger.ProcessingTime("15 seconds"))
+      .trigger(Trigger.ProcessingTime("30 seconds"))
       .option("truncate", "false")
       .option("numRows", "20")
       .start
@@ -72,7 +73,7 @@ object agg {
       .writeStream
       .format("kafka")
       .outputMode("update")
-      .trigger(Trigger.ProcessingTime("15 seconds"))
+      .trigger(Trigger.ProcessingTime("30 seconds"))
       .options(kafkaOutputParams)
       .start
 
