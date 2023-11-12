@@ -68,12 +68,16 @@ object agg {
       .option("numRows", "20")
       .start
 
-    sdfAgg
+    val writeQuery = sdfAgg
       .writeStream
       .format("kafka")
       .outputMode("update")
       .trigger(Trigger.ProcessingTime("5 seconds"))
       .options(kafkaOutputParams)
       .start
+
+    writeQuery.awaitTermination()
+
+    spark.stop()
   }
 }
