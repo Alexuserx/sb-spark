@@ -16,8 +16,8 @@ object test {
 
   private val kafkaOutputParams: Map[String, String] = Map(
     "kafka.bootstrap.servers" -> "spark-master-1:6667",
-    "subscribe" -> "aleksandr_yurchenko_lab07_out",
-    "checkpointLocation" -> "/tmp/chk_yurchenko"
+    "checkpointLocation" -> "/tmp/chk_yurchenko",
+    "topic" -> "aleksandr_yurchenko_lab07_out"
   )
 
   private val valueSchema: StructType = StructType(
@@ -37,7 +37,7 @@ object test {
 
   def main(args: Array[String]): Unit = {
 
-    "hdfs dfs -rm -r /tmp/chk_yurchenko".!!
+    println("hdfs dfs -rm -r /tmp/chk_yurchenko".!!)
 
     val spark: SparkSession = SparkSession.builder()
       .appName("laba07")
@@ -63,7 +63,7 @@ object test {
     val testParsedDF = testDF
       .withColumn("domains", urlDecoderUDF(col("visits")).cast("array<string>"))
       .drop(col("visits"))
-      .withColumn("gender_age", lit(null).cast(StringType))
+      .withColumn("gender_age", lit("M:25-34").cast(StringType))
     println("<<< PARSED DATA >>>")
 
     val model = PipelineModel.load(model_path)
