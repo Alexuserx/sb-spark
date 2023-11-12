@@ -18,12 +18,12 @@ object agg {
 
   private val valueSchema: StructType = StructType(
     Seq(
-      StructField("event_type", StringType, nullable = false),
       StructField("category", StringType, nullable = false),
+      StructField("event_type", StringType, nullable = false),
       StructField("item_id", StringType, nullable = false),
       StructField("item_price", StringType, nullable = false),
-      StructField("uid", StringType, nullable = false),
-      StructField("timestamp", StringType, nullable = false)
+      StructField("timestamp", StringType, nullable = false),
+      StructField("uid", StringType, nullable = false)
     )
   )
 
@@ -54,8 +54,8 @@ object agg {
         sum(when(col("event_type") === lit("buy"), lit(1)).otherwise(lit(0))).alias("purchases")
       )
       .withColumn("aov", col("revenue") / col("purchases"))
-      .withColumn("start_ts", col("window").getItem("start").cast(LongType))
-      .withColumn("end_ts", col("window").getItem("end").cast(LongType))
+      .withColumn("start_ts", col("window.start").cast(LongType))
+      .withColumn("end_ts", col("window.end").cast(LongType))
       .drop("window").toJSON
       .withColumn("key", lit(null).cast(StringType))
 
@@ -63,7 +63,7 @@ object agg {
       .writeStream
       .format("console")
       .outputMode("update")
-      .trigger(Trigger.ProcessingTime("5 seconds"))
+      .trigger(Trigger.ProcessingTime("30 seconds"))
       .option("truncate", "false")
       .option("numRows", "20")
       .start
@@ -72,7 +72,7 @@ object agg {
       .writeStream
       .format("kafka")
       .outputMode("update")
-      .trigger(Trigger.ProcessingTime("5 seconds"))
+      .trigger(Trigger.ProcessingTime("30 seconds"))
       .options(kafkaOutputParams)
       .start
 
