@@ -56,17 +56,24 @@ object agg {
       .withColumn("aov", col("revenue") / col("purchases"))
       .withColumn("start_ts", col("window").getItem("start").cast(LongType))
       .withColumn("end_ts", col("window").getItem("end").cast(LongType))
-      .drop("window")
+      .drop("window").toJSON
+      .withColumn("key", lit(null).cast(StringType))
 
     sdfAgg
-      .toJSON
-      .withColumn("key", lit(null).cast(StringType))
       .writeStream
+      .format("console")
       .outputMode("update")
       .trigger(Trigger.ProcessingTime("5 seconds"))
-      .format("kafka")
-      .options(kafkaOutputParams)
-      .start()
+      .option("truncate", "false")
+      .option("numRows", "20")
+      .start
 
+    sdfAgg
+      .writeStream
+      .format("kafka")
+      .outputMode("update")
+      .trigger(Trigger.ProcessingTime("5 seconds"))
+      .options(kafkaOutputParams)
+      .start
   }
 }
