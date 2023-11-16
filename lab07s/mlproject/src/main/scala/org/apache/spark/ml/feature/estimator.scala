@@ -20,7 +20,7 @@ class SklearnEstimator(override val uid: String) extends Estimator[SklearnEstima
     // Данный метод fit возвращает SklearnEstimatorModel, поэтому инициализируйте данный объект, где в качестве параметра будет приниматься модель в формате base64.
     val pwd = System.getProperty("user.dir")
     println(s"<<< pwd=$pwd >>>")
-    val model = dataset.rdd.pipe(s"$pwd/src/main/scala/py_files/train.py").collect()(0)
+    val model = dataset.rdd.pipe("/user/aleksandr.yurchenko/train.py").collect()(0)
     println(s"<<< Result of train.py - model: [$model]>>>")
     new SklearnEstimatorModel(uid = uid, model = model)
 
