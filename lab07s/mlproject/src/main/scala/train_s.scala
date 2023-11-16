@@ -13,7 +13,7 @@ object train_s {
     spark.conf.set("spark.sql.session.timeZone", "UTC")
 
     val input_path: String = Try {spark.sparkContext.getConf.get("spark.model.input_path")}
-      .getOrElse("C:/Users/alexuserx/IdeaProjects/sb-spark/lab07s/mlproject/src/laba07/laba07.json")
+      .getOrElse("/labs/laba07/laba07.json")
     val model_path: String = Try {spark.sparkContext.getConf.get("spark.model.model_path")}
       .getOrElse("/tmp/pipeline_yurchenko")
     println(s"<<< CONF >>> => input_path=$input_path,model_path=$model_path")
