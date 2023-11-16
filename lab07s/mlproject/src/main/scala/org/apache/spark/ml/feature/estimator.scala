@@ -18,7 +18,7 @@ class SklearnEstimator(override val uid: String) extends Estimator[SklearnEstima
     // Внутри данного метода необходимо вызывать обучение модели при помощи train.py. Используйте для этого rdd.pipe().
     // Файл train.py будет возвращать сериализованную модель в формате base64.
     // Данный метод fit возвращает SklearnEstimatorModel, поэтому инициализируйте данный объект, где в качестве параметра будет приниматься модель в формате base64.
-    val model = dataset.rdd.pipe("train.py").collect()(0)
+    val model = dataset.rdd.pipe("./src/main/scala/py_files/train.py ").collect()(0)
     println(s"<<< Result of train.py - model: [$model]>>>")
     new SklearnEstimatorModel(uid = uid, model = model)
 
