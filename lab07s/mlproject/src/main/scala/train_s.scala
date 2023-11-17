@@ -7,7 +7,7 @@ import org.apache.spark.sql.functions._
 
 import scala.util.Try
 
-class train_s {
+object train_s {
   def main(args: Array[String]): Unit = {
     val spark: SparkSession = SparkSession.builder()
       .appName("lab07s")

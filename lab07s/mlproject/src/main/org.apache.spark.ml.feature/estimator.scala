@@ -1,13 +1,18 @@
 package org.apache.spark.ml.feature
 
 import org.apache.hadoop.fs.Path
+import org.apache.spark.SparkContext
 import org.apache.spark.ml.feature.SklearnEstimatorModel.SklearnEstimatorModelWriter
-import org.apache.spark.ml.{Estimator, Model}
 import org.apache.spark.ml.param.{Param, ParamMap}
-import org.apache.spark.ml.util.{DefaultParamsReadable, DefaultParamsReader, DefaultParamsWritable, DefaultParamsWriter, Identifiable, MLReadable, MLReader, MLWritable, MLWriter}
+import org.apache.spark.ml.util._
+import org.apache.spark.ml.{Estimator, Model}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
+import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
+
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Paths}
 
 class SklearnEstimator(override val uid: String) extends Estimator[SklearnEstimatorModel]
   with DefaultParamsWritable
@@ -49,31 +54,24 @@ class SklearnEstimatorModel(override val uid: String, val model: String) extends
   //как видно выше, для инициализации объекта данного класса в качестве одного из параметров конструктора является String-переменная model, это и есть модель в формате base64, которая была возвращена из train.py
   override def copy(extra: ParamMap): SklearnEstimatorModel = defaultCopy(extra)
 
-  private case class Data(model: String)
-
   override def transform(dataset: Dataset[_]): DataFrame = {
     // Внутри данного метода необходимо вызывать test.py для получения предсказаний. Используйте для этого rdd.pipe().
     // Внутри test.py используется обученная модель, которая хранится в переменной `model`. Поэтому перед вызовом rdd.pipe() необходимо записать данное значение в файл и добавить его в spark-сессию при помощи sparkSession.sparkContext.addFile.
     // Данный метод возвращает DataFrame, поэтому полученные предсказания необходимо корректно преобразовать в DF.
-    val sparkSession = SparkSession.builder().getOrCreate()
-    sparkSession.createDataFrame(Seq(Data(model))).repartition(1).write.parquet("lab07.model")
-    println(s"<<< Saved model to: lab07.model >>>")
-    try {
-      sparkSession.sparkContext.addFile("lab07.model")
-      println(s"<<< Added file lab07.model >>>")
-    } catch {
-      case e: Throwable => println(s"can't write to lab07.model ${e.toString}")
-    }
-    try {
-      sparkSession.sparkContext.addFile("./lab07.model")
-      println(s"<<< Added file ./lab07.model >>>")
-    } catch {
-      case e: Throwable => println(s"can't write to ./lab07.model ${e.toString}")
-    }
-    val predictions: RDD[String] = dataset.rdd.pipe("./test.py")
-    println(s"<<< Predictions >>>")
-    predictions.foreach(println)
-    dataset.toDF()
+
+    // ------------------- Сохраняем [локально] не сам класс модели, а только файл для python крипта ------------------
+    Files.write(Paths.get("lab07.model"), model.getBytes(StandardCharsets.UTF_8))
+    val spark: SparkSession = SparkSession.builder().getOrCreate()
+    val sc: SparkContext = spark.sparkContext
+    sc.addFile("lab07.model")
+    val pipedRDD: RDD[String] = dataset.rdd.pipe("./test.py")
+
+    // ------------------- Изменить rdd, чтобы сразу создать датафрейм с нужной схемой [без кастов] ------------------
+    val predsRDD = dataset.repartition(1).rdd.zip(pipedRDD).map(r => Row.fromSeq(Seq(r._1) ++ Seq(r._2)))
+//    val predsRDD: RDD[String] = dataset.repartition(1).rdd.zip(pipedRDD).map(r => Row.fromSeq(r._1.toSeq ++ Seq(r._2)))
+    val outputFields = dataset.schema.fields :+ StructField("prediction", StringType, nullable = true)
+    spark.createDataFrame(predsRDD, StructType(outputFields))
+      .withColumn("prediction", from_json(col("prediction"), lit("array<double>")))
   }
 
   override def transformSchema(schema: StructType): StructType = {
