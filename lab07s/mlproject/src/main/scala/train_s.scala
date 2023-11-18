@@ -79,6 +79,7 @@ object train_s {
     model.write.overwrite().save(model_path)
     println("<<< Saved model >>>")
 
+    spark.stop()
   }
 
 }

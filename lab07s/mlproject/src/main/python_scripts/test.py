@@ -36,6 +36,10 @@ for i, line in enumerate(sys.stdin):
 
 
 matrix = coo_matrix((data, (rows, cols)), shape=(num_rows, vocab_size))
-preds = model.predict(matrix)
+preds = model.predict_proba(matrix)
 
-print(preds)
+# for pred in preds:
+#     print(",".join(list(map(str, pred))))
+
+for pred in preds:
+    print(list(pred))

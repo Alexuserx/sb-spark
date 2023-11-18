@@ -59,20 +59,20 @@ object test_s {
       .select(col("value").cast(StringType))
       .withColumn("jsonData", from_json(col("value"), valueSchema))
       .select(col("jsonData.*"))
-    println("<<< LOADED DATA >>>")
+    println("<<< Loaded data >>>")
 
     val testParsedDF = testDF
       .withColumn("gender_age", lit("M:25-34").cast(StringType))
-    println("<<< PARSED DATA >>>")
+    println("<<< Parsed data >>>")
 
     val model = SklearnEstimatorModel.load(model_path)
-    println("<<< LOADED MODEL >>>")
+    println("<<< Loaded  SklearnEstimatorModel >>>")
 
     val resultDF = model.transform(testParsedDF)
       .select(col("uid"), col("original_label").alias("gender_age"))
       .toJSON
       .withColumn("key", lit(null).cast(StringType))
-    println("<<< APPLIED MODEL >>>")
+    println("<<< Applied SklearnEstimatorModel >>>")
 
     val writeQuery = resultDF
       .writeStream

@@ -26,10 +26,13 @@ class SklearnEstimator(override val uid: String) extends Estimator[SklearnEstima
   def setFeaturesCol(value: String): this.type = set(featuresCol, value)
 
   override def fit(dataset: Dataset[_]): SklearnEstimatorModel = {
+    println("<<< Start method  SklearnEstimator.SklearnEstimatorModel() >>>")
     // Внутри данного метода необходимо вызывать обучение модели при помощи train.py. Используйте для этого rdd.pipe().
     // Файл train.py будет возвращать сериализованную модель в формате base64.
     // Данный метод fit возвращает SklearnEstimatorModel, поэтому инициализируйте данный объект, где в качестве параметра будет приниматься модель в формате base64.
-    val pipedRDD = dataset.repartition(1).select($(featuresCol), $(labelCol)).rdd.pipe("./train.py")
+    // ------------- так как внутри train.py названия колонок захардкожены, то не смысла их устанавливать --------------
+    val pipedRDD = dataset.repartition(1).select($(featuresCol), $(labelCol)).toJSON.rdd.pipe("./train.py")
+    println("<<< Successfully created DAG for pipedRDD >>>")
     val model = pipedRDD.collect()(0)
     println(s"<<< File ./train.py executed successfully >>>")
     new SklearnEstimatorModel(uid = uid, model = model)
@@ -55,19 +58,25 @@ class SklearnEstimatorModel(override val uid: String, val model: String) extends
   override def copy(extra: ParamMap): SklearnEstimatorModel = defaultCopy(extra)
 
   override def transform(dataset: Dataset[_]): DataFrame = {
+    println("<<< Start method  SklearnEstimatorModel.transform() >>>")
     // Внутри данного метода необходимо вызывать test.py для получения предсказаний. Используйте для этого rdd.pipe().
     // Внутри test.py используется обученная модель, которая хранится в переменной `model`. Поэтому перед вызовом rdd.pipe() необходимо записать данное значение в файл и добавить его в spark-сессию при помощи sparkSession.sparkContext.addFile.
     // Данный метод возвращает DataFrame, поэтому полученные предсказания необходимо корректно преобразовать в DF.
 
     // ------------------- Сохраняем [локально] не сам класс модели, а только файл для python крипта ------------------
     Files.write(Paths.get("lab07.model"), model.getBytes(StandardCharsets.UTF_8))
+    println("<<< Saved model to local file system >>>")
     val spark: SparkSession = SparkSession.builder().getOrCreate()
     val sc: SparkContext = spark.sparkContext
     sc.addFile("lab07.model")
+    println("<<< Added lab07.model to Spark Context >>>")
     val pipedRDD: RDD[String] = dataset.rdd.pipe("./test.py")
+    println("<<< Successfully created DAG for pipedRDD >>>")
 
     // ------------------- Изменить rdd, чтобы сразу создать датафрейм с нужной схемой [без кастов] ------------------
-    val predsRDD = dataset.repartition(1).rdd.zip(pipedRDD).map(r => Row.fromSeq(Seq(r._1) ++ Seq(r._2)))
+    val predsRDD = dataset.repartition(1).rdd.zip(pipedRDD).map(r => Row.fromSeq(r._1.toSeq ++ Seq(r._2)))
+    println(s"<<< File ./test.py executed successfully >>>")
+//    pipedRDD.map(r => r.stripPrefix("[").stripSuffix("]").split(",").map(_.toDouble)
 //    val predsRDD: RDD[String] = dataset.repartition(1).rdd.zip(pipedRDD).map(r => Row.fromSeq(r._1.toSeq ++ Seq(r._2)))
     val outputFields = dataset.schema.fields :+ StructField("prediction", StringType, nullable = true)
     spark.createDataFrame(predsRDD, StructType(outputFields))
