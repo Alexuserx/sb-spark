@@ -1,5 +1,5 @@
 import org.apache.spark.ml.PipelineModel
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.streaming.Trigger
 import org.apache.spark.sql.types._
@@ -69,14 +69,20 @@ object test_s {
     val model = PipelineModel.load(model_path)
     println("<<< Loaded  SklearnEstimatorModel >>>")
 
-    val resultDF = model.transform(testParsedDF)
-      .select(col("uid"), col("original_label").alias("gender_age"))
-      .toJSON
-      .withColumn("key", lit(null).cast(StringType))
-    println("<<< Applied SklearnEstimatorModel >>>")
+//    val resultDF = model.transform(testParsedDF)
+//      .select(col("uid"), col("original_label").alias("gender_age"))
+//      .toJSON
+//      .withColumn("key", lit(null).cast(StringType))
+//    println("<<< Applied SklearnEstimatorModel >>>")
 
-    val writeQuery = resultDF
+    val writeQuery = testParsedDF
       .writeStream
+      .foreachBatch { (batchDF: DataFrame, batchId: Long) =>
+        val transformedDF = model.transform(batchDF)
+        transformedDF.select(col("uid"), col("original_label").alias("gender_age"))
+          .toJSON
+          .withColumn("key", lit(null).cast(StringType))
+      }
       .format("kafka")
       .outputMode("update")
       .trigger(Trigger.ProcessingTime("30 seconds"))
