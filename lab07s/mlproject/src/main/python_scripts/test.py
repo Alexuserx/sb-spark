@@ -12,15 +12,14 @@ from scipy.sparse import coo_matrix
 
 
 model = pickle.loads(
-          base64.b64decode(
-            open("lab07.model").read().encode('utf-8')
-          )
-        )
+    base64.b64decode(
+        open("lab07.model").read().encode('utf-8')
+    )
+)
 
 data, rows, cols = [], [], []
 vocab_size = None
 num_rows = 0
-
 for i, line in enumerate(sys.stdin):
     parsed = json.loads(line)
     indices = parsed['features']['indices']

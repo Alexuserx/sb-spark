@@ -70,7 +70,7 @@ class SklearnEstimatorModel(override val uid: String, val model: String) extends
     val sc: SparkContext = spark.sparkContext
     sc.addFile("lab07.model")
     println("<<< Added lab07.model to Spark Context >>>")
-    val pipedRDD: RDD[String] = dataset.repartition(1).toJSON.rdd.pipe("./test.py")
+    val pipedRDD: RDD[String] = dataset.select("features").repartition(1).toJSON.rdd.pipe("./test.py")
     println("<<< Successfully created DAG for pipedRDD >>>")
 
     println(s"Execution result of ./test.py ${pipedRDD.collect()(0)}")
