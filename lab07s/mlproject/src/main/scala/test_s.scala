@@ -1,10 +1,10 @@
-import org.apache.spark.ml.feature._
+import org.apache.spark.ml.feature.SklearnEstimatorModel
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.streaming.Trigger
 import org.apache.spark.sql.types._
-import sys.process._
 
+import scala.sys.process._
 import scala.util.Try
 
 object test_s {

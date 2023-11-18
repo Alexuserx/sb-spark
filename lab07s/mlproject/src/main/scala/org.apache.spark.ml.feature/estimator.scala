@@ -110,6 +110,7 @@ object SklearnEstimatorModel extends MLReadable[SklearnEstimatorModel] {
       DefaultParamsWriter.saveMetadata(instance, path, sc)
       val data = Data(instance.model)
       val dataPath = new Path(path, "data").toString
+      println(s"<<<<<<<<< SklearnEstimatorModel.saveImpl() saved model to $dataPath >>>>>>>>>")
       sparkSession.createDataFrame(Seq(data)).repartition(1).write.parquet(dataPath)
     }
   }
