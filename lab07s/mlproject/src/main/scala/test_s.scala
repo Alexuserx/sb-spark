@@ -5,6 +5,7 @@ import org.apache.spark.sql.streaming.Trigger
 import org.apache.spark.sql.types._
 
 import scala.util.Try
+import sys.process._
 
 object test_s {
   private val kafkaInputParams: Map[String, String] = Map(
@@ -24,7 +25,7 @@ object test_s {
       StructField("visits", ArrayType(
         StructType(
           Seq(
-            StructField("uid", StringType, nullable = false),
+            StructField("url", StringType, nullable = false),
             StructField("timestamp", StringType, nullable = false)
           )
         ), containsNull = false
@@ -35,7 +36,11 @@ object test_s {
 
   def main(args: Array[String]): Unit = {
 
-//    println("hdfs dfs -rm -r /tmp/chk_yurchenko".!!)
+    try {
+      println("hdfs dfs -rm -r /tmp/chk_yurchenko".!!)
+    } catch {
+      case e: Throwable => println(s"Is Empty ${e.toString}")
+    }
 
     val spark: SparkSession = SparkSession.builder()
       .appName("lab07s")
@@ -67,7 +72,7 @@ object test_s {
     println("<<< Parsed data >>>")
 
     val model = PipelineModel.load(model_path)
-    println("<<< Loaded  SklearnEstimatorModel >>>")
+    println("<<< Loaded  PipelineModel[... SklearnEstimatorModel ...] >>>")
 
 //    val resultDF = model.transform(testParsedDF)
 //      .select(col("uid"), col("original_label").alias("gender_age"))
@@ -78,8 +83,8 @@ object test_s {
     val writeQuery = testParsedDF
       .writeStream
       .foreachBatch { (batchDF: DataFrame, batchId: Long) =>
-        val transformedDF = model.transform(batchDF)
-        transformedDF.select(col("uid"), col("original_label").alias("gender_age"))
+        model.transform(batchDF)
+          .select(col("uid"), col("original_label").alias("gender_age"))
           .toJSON
           .withColumn("key", lit(null).cast(StringType))
       }
