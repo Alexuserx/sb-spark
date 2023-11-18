@@ -122,8 +122,7 @@ object SklearnEstimatorModel extends MLReadable[SklearnEstimatorModel] {
     override def load(path: String): SklearnEstimatorModel = {
       // В данном методе считывается значение модели в формате base64 из hdfs
       println(s"<<<<<<<<< Start method SklearnEstimatorModel.load() [$className :: $path] >>>>>>>>>")
-//      val metadata = DefaultParamsReader.loadMetadata(path, sc, className)
-      val metadata = DefaultParamsReader.loadMetadata(path, sc)
+      val metadata = DefaultParamsReader.loadMetadata(path, sc, className)
       println(s"<<<<<<<<< SklearnEstimatorModel.load() metadata: $metadata >>>>>>>>>")
       val dataPath = new Path(path, "data").toString
       println(s"<<<<<<<<< SklearnEstimatorModel.load() will be loaded model from $dataPath >>>>>>>>>")
