@@ -20,26 +20,30 @@ model = pickle.loads(
 data, rows, cols = [], [], []
 vocab_size = None
 num_rows = 0
+
 for i, line in enumerate(sys.stdin):
-    try:
-        parsed = json.loads(line)
-        indices = parsed['features']['indices']
-        values = parsed['features']['values']
+    parsed = json.loads(line)
+    indices = parsed['features']['indices']
+    values = parsed['features']['values']
 
-        if vocab_size is None:
-            vocab_size = parsed['features']['size']
-        num_rows += 1
+    if vocab_size is None:
+        vocab_size = parsed['features']['size']
+    num_rows += 1
 
-        cols.extend(indices)
-        rows.extend([i] * len(indices))
-        data.extend(values)
-    except Exception as e:
-        print("FUCK UP ON LINE [{}] = {}, Error {}".format(i, line, e))
+    cols.extend(indices)
+    rows.extend([i] * len(indices))
+    data.extend(values)
 
-print("EVERYTHING IS OK")
 
-# matrix = coo_matrix((data, (rows, cols)), shape=(num_rows, vocab_size))
-# preds = model.predict_proba(matrix)
-#
-# for pred in preds:
-#     print(list(pred))
+try:
+    matrix = coo_matrix((data, (rows, cols)), shape=(num_rows, vocab_size))
+except Exception as e:
+    print("FUCKED UP MATRIX: {}".format(e))
+
+try:
+    preds = model.predict_proba(matrix)
+except Exception as e:
+    print("FUCKED UP MODEL: {}".format(e))
+
+for pred in preds:
+    print(list(pred))
