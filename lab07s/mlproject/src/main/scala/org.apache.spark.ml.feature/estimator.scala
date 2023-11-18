@@ -74,7 +74,7 @@ class SklearnEstimatorModel(override val uid: String, val model: String) extends
     println("<<< Successfully created DAG for pipedRDD >>>")
 
     // ------------------- Изменить rdd, чтобы сразу создать датафрейм с нужной схемой [без кастов] ------------------
-    val predsRDD = dataset.repartition(1).rdd.zip(pipedRDD).map(r => Row.fromSeq(r._1.toSeq ++ Seq(r._2)))
+    val predsRDD = dataset.repartition(1).rdd.zip(pipedRDD).map(r => Row.fromSeq(Seq(r._1) ++ Seq(r._2)))
     println(s"<<< File ./test.py executed successfully >>>")
 //    pipedRDD.map(r => r.stripPrefix("[").stripSuffix("]").split(",").map(_.toDouble)
 //    val predsRDD: RDD[String] = dataset.repartition(1).rdd.zip(pipedRDD).map(r => Row.fromSeq(r._1.toSeq ++ Seq(r._2)))
