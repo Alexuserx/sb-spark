@@ -87,6 +87,7 @@ object test_s {
           .select(col("uid"), col("original_label").alias("gender_age"))
           .toJSON
           .withColumn("key", lit(null).cast(StringType))
+          .show()
       }
       .format("kafka")
       .outputMode("update")
