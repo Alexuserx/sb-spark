@@ -111,7 +111,7 @@ object SklearnEstimatorModel extends MLReadable[SklearnEstimatorModel] {
       val data = Data(instance.model)
       val dataPath = new Path(path, "data").toString
       println(s"<<<<<<<<< SklearnEstimatorModel.saveImpl() saved model to $dataPath >>>>>>>>>")
-      sparkSession.createDataFrame(Seq(data)).repartition(1).write.parquet(dataPath)
+      sparkSession.createDataFrame(Seq(data)).repartition(1).write.mode("overwrite").parquet(dataPath)
     }
   }
 
