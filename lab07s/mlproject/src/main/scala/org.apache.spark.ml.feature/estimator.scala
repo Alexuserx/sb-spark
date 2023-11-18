@@ -13,6 +13,7 @@ import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
+import scala.collection.Seq
 
 class SklearnEstimator(override val uid: String) extends Estimator[SklearnEstimatorModel]
   with DefaultParamsWritable
@@ -70,21 +71,21 @@ class SklearnEstimatorModel(override val uid: String, val model: String) extends
     val sc: SparkContext = spark.sparkContext
     sc.addFile("lab07.model")
     println("<<< Added lab07.model to Spark Context >>>")
-    val pipedRDD: RDD[String] = dataset.select("features").repartition(1).toJSON.rdd.pipe("./test.py")
-    println("<<< Successfully created DAG for pipedRDD >>>")
-    pipedRDD.collect().foreach(r => println(s"\n\n${r}"))
+    if (dataset.isEmpty) {
+      dataset.withColumn("prediction", lit(null).cast("array<double>"))
+    } else {
+      val pipedRDD: RDD[String] = dataset.select("features").repartition(1).toJSON.rdd.pipe("./test.py")
+      println("<<< Successfully created DAG for pipedRDD >>>")
+      println(s"<<< Execution result of ./test.py >>>")
+      pipedRDD.collect().foreach(r => println(s"\n\n${r}"))
+      // ------------------- Изменить rdd, чтобы сразу создать датафрейм с нужной схемой [без кастов] ------------------
+      val predsRDD = dataset.repartition(1).rdd.zip(pipedRDD).map(r => Row.fromSeq(Seq(r._1) ++ Seq(r._2)))
+      println(s"<<< File ./test.py executed successfully >>>")
 
-
-    println(s"Execution result of ./test.py ${pipedRDD.collect()(0)}")
-
-    // ------------------- Изменить rdd, чтобы сразу создать датафрейм с нужной схемой [без кастов] ------------------
-    val predsRDD = dataset.repartition(1).rdd.zip(pipedRDD).map(r => Row.fromSeq(Seq(r._1) ++ Seq(r._2)))
-    println(s"<<< File ./test.py executed successfully >>>")
-//    pipedRDD.map(r => r.stripPrefix("[").stripSuffix("]").split(",").map(_.toDouble)
-//    val predsRDD: RDD[String] = dataset.repartition(1).rdd.zip(pipedRDD).map(r => Row.fromSeq(r._1.toSeq ++ Seq(r._2)))
-    val outputFields = dataset.schema.fields :+ StructField("prediction", StringType, nullable = true)
-    spark.createDataFrame(predsRDD, StructType(outputFields))
-      .withColumn("prediction", from_json(col("prediction"), lit("array<double>")))
+      val outputFields = dataset.schema.fields :+ StructField("prediction", StringType, nullable = true)
+      spark.createDataFrame(predsRDD, StructType(outputFields))
+        .withColumn("prediction", from_json(col("prediction"), lit("array<double>")))
+    }
   }
 
   override def transformSchema(schema: StructType): StructType = {

@@ -35,15 +35,8 @@ for i, line in enumerate(sys.stdin):
     data.extend(values)
 
 
-try:
-    matrix = coo_matrix((data, (rows, cols)), shape=(num_rows, vocab_size))
-except Exception as e:
-    print("FUCKED UP MATRIX: {}".format(e))
+matrix = coo_matrix((data, (rows, cols)), shape=(num_rows, vocab_size))
+preds = model.predict_proba(matrix)
 
-try:
-    preds = model.predict_proba(matrix)
-except Exception as e:
-    print("FUCKED UP MODEL: {}".format(e))
-
-# for pred in preds:
-#     print(list(pred))
+for pred in preds:
+    print(list(pred))
