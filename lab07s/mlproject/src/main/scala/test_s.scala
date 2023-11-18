@@ -37,7 +37,7 @@ object test_s {
 
   def main(args: Array[String]): Unit = {
 
-    println("hdfs dfs -rm -r /tmp/chk_yurchenko".!!)
+//    println("hdfs dfs -rm -r /tmp/chk_yurchenko".!!)
 
     val spark: SparkSession = SparkSession.builder()
       .appName("lab07s")
