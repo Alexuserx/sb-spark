@@ -83,16 +83,20 @@ object test_s {
     val writeQuery = testParsedDF
       .writeStream
       .foreachBatch { (batchDF: DataFrame, batchId: Long) =>
-        model.transform(batchDF)
+        val resultDF = model.transform(batchDF)
           .select(col("uid"), col("original_label").alias("gender_age"))
           .toJSON
           .withColumn("key", lit(null).cast(StringType))
-          .show()
+        resultDF
+          .write
+          .format("kafka")
+          .options(kafkaOutputParams)
+          .save()
       }
-      .format("kafka")
-      .outputMode("update")
+//      .format("kafka")
+//      .outputMode("update")
       .trigger(Trigger.ProcessingTime("30 seconds"))
-      .options(kafkaOutputParams)
+//      .options(kafkaOutputParams)
       .start
 
     writeQuery.awaitTermination()
