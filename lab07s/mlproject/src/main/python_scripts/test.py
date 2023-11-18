@@ -17,28 +17,29 @@ model = pickle.loads(
     )
 )
 
-data, rows, cols = [], [], []
-vocab_size = None
-num_rows = 0
-for i, line in enumerate(sys.stdin):
-    parsed = json.loads(line)
-    indices = parsed['features']['indices']
-    values = parsed['features']['values']
-
-    if vocab_size is None:
-        vocab_size = parsed['features']['size']
-    num_rows += 1
-
-    cols.extend(indices)
-    rows.extend([i] * len(indices))
-    data.extend(values)
-
-
-matrix = coo_matrix((data, (rows, cols)), shape=(num_rows, vocab_size))
-preds = model.predict_proba(matrix)
+# data, rows, cols = [], [], []
+# vocab_size = None
+# num_rows = 0
+# for i, line in enumerate(sys.stdin):
+#     parsed = json.loads(line)
+#     indices = parsed['features']['indices']
+#     values = parsed['features']['values']
+#
+#     if vocab_size is None:
+#         vocab_size = parsed['features']['size']
+#     num_rows += 1
+#
+#     cols.extend(indices)
+#     rows.extend([i] * len(indices))
+#     data.extend(values)
+#
+#
+# matrix = coo_matrix((data, (rows, cols)), shape=(num_rows, vocab_size))
+# preds = model.predict_proba(matrix)
 
 # for pred in preds:
-#     print(",".join(list(map(str, pred))))
+#     print(list(pred))
 
-for pred in preds:
-    print(list(pred))
+print("[10,10,10,11]")
+print("[10,10,10,12]")
+print("[10,10,10,13]")
