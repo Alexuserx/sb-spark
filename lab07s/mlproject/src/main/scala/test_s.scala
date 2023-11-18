@@ -49,6 +49,8 @@ object test_s {
 
     val model_path: String = Try {spark.sparkContext.getConf.get("spark.model.model_path")}
       .getOrElse("/tmp/pipeline_yurchenko")
+    println(s"<<< CONF >>> Params: " +
+      s"\n\tmodel_path=$model_path")
 
     val sdfInput = spark
       .readStream
@@ -66,9 +68,7 @@ object test_s {
       .withColumn("gender_age", lit("M:25-34").cast(StringType))
     println("<<< Parsed data >>>")
 
-    val model_path_full = new Path(model_path, "data").toString
-    println(s"<<< Will be loaded model from path $model_path_full>>>")
-    val model = SklearnEstimatorModel.load(model_path_full)
+    val model = SklearnEstimatorModel.load(model_path)
     println("<<< Loaded  SklearnEstimatorModel >>>")
 
     val resultDF = model.transform(testParsedDF)
