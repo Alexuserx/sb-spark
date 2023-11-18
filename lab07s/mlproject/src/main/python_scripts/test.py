@@ -45,5 +45,5 @@ try:
 except Exception as e:
     print("FUCKED UP MODEL: {}".format(e))
 
-for pred in preds:
-    print(list(pred))
+# for pred in preds:
+#     print(list(pred))
