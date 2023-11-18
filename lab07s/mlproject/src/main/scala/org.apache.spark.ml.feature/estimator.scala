@@ -7,13 +7,13 @@ import org.apache.spark.ml.param.{Param, ParamMap}
 import org.apache.spark.ml.util._
 import org.apache.spark.ml.{Estimator, Model}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
-import scala.collection.Seq
 
 class SklearnEstimator(override val uid: String) extends Estimator[SklearnEstimatorModel]
   with DefaultParamsWritable
@@ -72,19 +72,27 @@ class SklearnEstimatorModel(override val uid: String, val model: String) extends
     sc.addFile("lab07.model")
     println("<<< Added lab07.model to Spark Context >>>")
     if (dataset.isEmpty) {
-      dataset.withColumn("prediction", lit(null).cast("array<double>"))
+      dataset.withColumn("prediction", lit(null).cast("double"))
     } else {
       val pipedRDD: RDD[String] = dataset.select("features").repartition(1).toJSON.rdd.pipe("./test.py")
       println("<<< Successfully created DAG for pipedRDD >>>")
       println(s"<<< Execution result of ./test.py >>>")
       pipedRDD.collect().foreach(r => println(s"\n\n${r}"))
+
       // ------------------- Изменить rdd, чтобы сразу создать датафрейм с нужной схемой [без кастов] ------------------
-      val predsRDD = dataset.repartition(1).rdd.zip(pipedRDD).map(r => Row.fromSeq(Seq(r._1) ++ Seq(r._2)))
+      import spark.implicits._
+
+      val predsDF = pipedRDD.toDF("prediction")
+        .withColumn("prediction", col("prediction").cast(DoubleType))
+        .withColumn("id", monotonically_increasing_id())
+        .withColumn("id", row_number().over(Window.orderBy("id")))
       println(s"<<< File ./test.py executed successfully >>>")
 
-      val outputFields = dataset.schema.fields :+ StructField("prediction", StringType, nullable = true)
-      spark.createDataFrame(predsRDD, StructType(outputFields))
-        .withColumn("prediction", from_json(col("prediction"), lit("array<double>")))
+      dataset
+        .withColumn("id", monotonically_increasing_id())
+        .withColumn("id", row_number().over(Window.orderBy("id")))
+        .join(predsDF, Seq("id"), "inner")
+        .drop("id")
     }
   }
 
@@ -94,7 +102,7 @@ class SklearnEstimatorModel(override val uid: String, val model: String) extends
       throw new IllegalArgumentException(s"Output column ${"prediction"} already exists.")
     }
     val outputFields = schema.fields :+
-      StructField("prediction", ArrayType(DoubleType), nullable = false)
+      StructField("prediction", DoubleType, nullable = false)
     StructType(outputFields)
   }
 

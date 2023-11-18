@@ -1,4 +1,5 @@
 import org.apache.spark.ml.PipelineModel
+import org.apache.spark.ml.feature.{IndexToString, StringIndexerModel}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.streaming.Trigger
@@ -74,17 +75,18 @@ object test_s {
     val model = PipelineModel.load(model_path)
     println("<<< Loaded  PipelineModel[... SklearnEstimatorModel ...] >>>")
 
-//    val resultDF = model.transform(testParsedDF)
-//      .select(col("uid"), col("original_label").alias("gender_age"))
-//      .toJSON
-//      .withColumn("key", lit(null).cast(StringType))
-//    println("<<< Applied SklearnEstimatorModel >>>")
+    // ----- you have to know index of StringIndexerModel in pipeline -----
+     val indexToString = new IndexToString()
+       .setInputCol("prediction")
+       .setOutputCol("predicted_label")
+       .setLabels(model.stages(0).asInstanceOf[StringIndexerModel].labels)
 
     val writeQuery = testParsedDF
       .writeStream
       .foreachBatch { (batchDF: DataFrame, batchId: Long) =>
-        val resultDF = model.transform(batchDF)
-          .select(col("uid"), col("original_label").alias("gender_age"))
+        val predictionsDF = model.transform(batchDF)
+        val resultDF = indexToString.transform(predictionsDF)
+          .select(col("uid"), col("predicted_label").alias("gender_age"))
           .toJSON
           .withColumn("key", lit(null).cast(StringType))
         resultDF

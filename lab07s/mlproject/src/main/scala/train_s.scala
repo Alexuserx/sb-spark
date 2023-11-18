@@ -41,6 +41,10 @@ object train_s {
     println("<<< Preprocessed train data >>>")
 
     // ------------------------ Pipeline -------------------------
+    val stringIndexer = new StringIndexer()
+      .setInputCol("gender_age")
+      .setOutputCol("label")
+
     val url2DomainTransformer = new Url2DomainTransformer()
       .setInputCol("visits")
       .setOutputCol("domains")
@@ -49,28 +53,20 @@ object train_s {
       .setInputCol("domains")
       .setOutputCol("features")
 
-    val stringIndexer = new StringIndexer()
-      .setInputCol("gender_age")
-      .setOutputCol("label")
-
      val sklearnEstimator = new SklearnEstimator()
        .setLabelCol("label")
        .setFeaturesCol("features")
 
-     val indexToString = new IndexToString()
-       .setInputCol("label")
-       .setOutputCol("original_label")
-
     val pipeline = new Pipeline()
       .setStages(
         Array(
+          stringIndexer,
           url2DomainTransformer,
           countVectorizer,
-          stringIndexer,
-         sklearnEstimator,
-         indexToString
+          sklearnEstimator
         )
       )
+
     println("<<< Defined pipeline >>>")
 
     val model = pipeline.fit(training)
