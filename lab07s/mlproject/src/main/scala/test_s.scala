@@ -97,7 +97,7 @@ object test_s {
       }
 //      .format("kafka")
 //      .outputMode("update")
-      .trigger(Trigger.ProcessingTime("15 seconds"))
+      .trigger(Trigger.ProcessingTime("5 seconds"))
 //      .options(kafkaOutputParams)
       .start
 
