@@ -1,3 +1,4 @@
+import org.apache.hadoop.fs.Path
 import org.apache.spark.ml.feature.SklearnEstimatorModel
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
@@ -65,7 +66,9 @@ object test_s {
       .withColumn("gender_age", lit("M:25-34").cast(StringType))
     println("<<< Parsed data >>>")
 
-    val model = SklearnEstimatorModel.load(model_path)
+    val model_path_full = new Path(model_path, "data").toString
+    println(s"<<< Will be loaded model from path $model_path_full>>>")
+    val model = SklearnEstimatorModel.load(model_path_full)
     println("<<< Loaded  SklearnEstimatorModel >>>")
 
     val resultDF = model.transform(testParsedDF)
