@@ -77,7 +77,7 @@ class SklearnEstimatorModel(override val uid: String, val model: String) extends
       val pipedRDD: RDD[String] = dataset.select("features").repartition(1).toJSON.rdd.pipe("./test.py")
       println("<<< Successfully created DAG for pipedRDD >>>")
       println(s"<<< Execution result of ./test.py >>>")
-      pipedRDD.collect().foreach(r => println(s"\n\n${r}"))
+      pipedRDD.collect().foreach(r => println(s"\t\t${r}"))
 
       // ------------------- Изменить rdd, чтобы сразу создать датафрейм с нужной схемой [без кастов] ------------------
       import spark.implicits._
