@@ -7,6 +7,7 @@ import org.apache.spark.ml.param.{Param, ParamMap}
 import org.apache.spark.ml.util._
 import org.apache.spark.ml.{Estimator, Model}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
@@ -70,17 +71,27 @@ class SklearnEstimatorModel(override val uid: String, val model: String) extends
     val sc: SparkContext = spark.sparkContext
     sc.addFile("lab07.model")
     println("<<< Added lab07.model to Spark Context >>>")
-    val pipedRDD: RDD[String] = dataset.rdd.pipe("./test.py")
-    println("<<< Successfully created DAG for pipedRDD >>>")
+    if (dataset.isEmpty) {
+      dataset.withColumn("prediction", lit(null).cast("double"))
+    } else {
+      val pipedRDD: RDD[String] = dataset.select("features").repartition(1).toJSON.rdd.pipe("./test.py")
+      println("<<< Successfully created DAG for pipedRDD >>>")
 
-    // ------------------- Изменить rdd, чтобы сразу создать датафрейм с нужной схемой [без кастов] ------------------
-    val predsRDD = dataset.repartition(1).rdd.zip(pipedRDD).map(r => Row.fromSeq(r._1.toSeq ++ Seq(r._2)))
-    println(s"<<< File ./test.py executed successfully >>>")
-//    pipedRDD.map(r => r.stripPrefix("[").stripSuffix("]").split(",").map(_.toDouble)
-//    val predsRDD: RDD[String] = dataset.repartition(1).rdd.zip(pipedRDD).map(r => Row.fromSeq(r._1.toSeq ++ Seq(r._2)))
-    val outputFields = dataset.schema.fields :+ StructField("prediction", StringType, nullable = true)
-    spark.createDataFrame(predsRDD, StructType(outputFields))
-      .withColumn("prediction", from_json(col("prediction"), lit("array<double>")))
+      // ------------------- Изменить rdd, чтобы сразу создать датафрейм с нужной схемой [без кастов] ------------------
+      import spark.implicits._
+
+      val predsDF = pipedRDD.toDF("prediction")
+        .withColumn("prediction", col("prediction").cast(DoubleType))
+        .withColumn("id", monotonically_increasing_id())
+        .withColumn("id", row_number().over(Window.orderBy("id")))
+      println(s"<<< File ./test.py executed successfully >>>")
+
+      dataset
+        .withColumn("id", monotonically_increasing_id())
+        .withColumn("id", row_number().over(Window.orderBy("id")))
+        .join(predsDF, Seq("id"), "inner")
+        .drop("id")
+    }
   }
 
   override def transformSchema(schema: StructType): StructType = {
@@ -89,7 +100,7 @@ class SklearnEstimatorModel(override val uid: String, val model: String) extends
       throw new IllegalArgumentException(s"Output column ${"prediction"} already exists.")
     }
     val outputFields = schema.fields :+
-      StructField("prediction", ArrayType(DoubleType), nullable = false)
+      StructField("prediction", DoubleType, nullable = false)
     StructType(outputFields)
   }
 
@@ -108,7 +119,8 @@ object SklearnEstimatorModel extends MLReadable[SklearnEstimatorModel] {
       DefaultParamsWriter.saveMetadata(instance, path, sc)
       val data = Data(instance.model)
       val dataPath = new Path(path, "data").toString
-      sparkSession.createDataFrame(Seq(data)).repartition(1).write.parquet(dataPath)
+      println(s"<<<<<<<<< SklearnEstimatorModel.saveImpl() saved model to $dataPath >>>>>>>>>")
+      sparkSession.createDataFrame(Seq(data)).repartition(1).write.mode("overwrite").parquet(dataPath)
     }
   }
 
@@ -118,11 +130,15 @@ object SklearnEstimatorModel extends MLReadable[SklearnEstimatorModel] {
 
     override def load(path: String): SklearnEstimatorModel = {
       // В данном методе считывается значение модели в формате base64 из hdfs
+      println(s"<<<<<<<<< Start method SklearnEstimatorModel.load() [$className :: $path] >>>>>>>>>")
       val metadata = DefaultParamsReader.loadMetadata(path, sc, className)
+      println(s"<<<<<<<<< SklearnEstimatorModel.load() metadata: $metadata >>>>>>>>>")
       val dataPath = new Path(path, "data").toString
+      println(s"<<<<<<<<< SklearnEstimatorModel.load() will be loaded model from $dataPath >>>>>>>>>")
       val data = sparkSession.read.parquet(dataPath)
         .select("model")
         .head()
+      println(s"<<<<<<<<< SklearnEstimatorModel.load() successfully be loaded model from $dataPath >>>>>>>>>")
       val modelStr = data.getAs[String](0)
       val model = new SklearnEstimatorModel(metadata.uid, modelStr)
       metadata.getAndSetParams(model)
