@@ -1,11 +1,12 @@
 import org.apache.spark.ml.PipelineModel
+import org.apache.spark.ml.feature.{IndexToString, StringIndexerModel}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.streaming.Trigger
 import org.apache.spark.sql.types._
 import utils._
-import sys.process._
 
+import sys.process._
 import scala.util.Try
 
 object test {
@@ -63,14 +64,18 @@ object test {
     val testParsedDF = testDF
       .withColumn("domains", urlDecoderUDF(col("visits")).cast("array<string>"))
       .drop(col("visits"))
-      .withColumn("gender_age", lit("M:25-34").cast(StringType))
     println("<<< PARSED DATA >>>")
 
     val model = PipelineModel.load(model_path)
     println("<<< LOADED MODEL >>>")
 
-    val resultDF = model.transform(testParsedDF)
-      .select(col("uid"), col("original_label").alias("gender_age"))
+    val indexToString = new IndexToString()
+      .setInputCol("prediction")
+      .setOutputCol("gender_age")
+      .setLabels(model.stages(0).asInstanceOf[StringIndexerModel].labels)
+
+    val resultDF = indexToString.transform(model.transform(testParsedDF))
+      .select("uid", "gender_age")
       .toJSON
       .withColumn("key", lit(null).cast(StringType))
     println("<<< APPLIED MODEL >>>")
