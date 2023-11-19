@@ -56,20 +56,17 @@ object test_s {
     println(s"<<< CONF >>> Params: " +
       s"\n\tmodel_path=$model_path")
 
-    val sdfInput = spark
+    val testDF = spark
       .readStream
       .format("kafka")
       .options(kafkaInputParams)
       .load
-
-    val testDF = sdfInput
-      .select(col("value").cast(StringType))
-      .withColumn("jsonData", from_json(col("value"), valueSchema))
-      .select(col("jsonData.*"))
     println("<<< Loaded data >>>")
 
     val testParsedDF = testDF
-      .withColumn("gender_age", lit("M:25-34").cast(StringType))
+      .select(col("value").cast(StringType))
+      .withColumn("jsonData", from_json(col("value"), valueSchema))
+      .select(col("jsonData.*"))
     println("<<< Parsed data >>>")
 
     val model = PipelineModel.load(model_path)
@@ -78,7 +75,7 @@ object test_s {
     // ----- you have to know index of StringIndexerModel in pipeline -----
      val indexToString = new IndexToString()
        .setInputCol("prediction")
-       .setOutputCol("predicted_label")
+       .setOutputCol("gender_age")
        .setLabels(model.stages(0).asInstanceOf[StringIndexerModel].labels)
 
     val writeQuery = testParsedDF
@@ -86,7 +83,7 @@ object test_s {
       .foreachBatch { (batchDF: DataFrame, batchId: Long) =>
         val predictionsDF = model.transform(batchDF)
         val resultDF = indexToString.transform(predictionsDF)
-          .select(col("uid"), col("predicted_label").alias("gender_age"))
+          .select(col("uid"), col("gender_age"))
           .toJSON
           .withColumn("key", lit(null).cast(StringType))
         resultDF
