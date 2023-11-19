@@ -7,7 +7,7 @@ import scala.util.Try
 object test {
   def main(args: Array[String]): Unit = {
     val spark: SparkSession = SparkSession.builder()
-      .appName("lab07s")
+      .appName("lab08")
       .config("spark.driver.cores", "4")
       .config("spark.driver.memory", "4G")
       .getOrCreate()
